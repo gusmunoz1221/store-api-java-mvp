@@ -1,0 +1,17 @@
+name: store
+services:
+
+  db:
+    image: postgres:15.2
+    container_name: store
+    restart: always
+    volumes:
+      - ./db/sql/01_types.sql:/docker-entrypoint-initdb.d/01_types.sql
+      - ./db/sql/02_create_schema.sql:/docker-entrypoint-initdb.d/02_create_schema.sql
+      - ./db/sql/03_data.sql:/docker-entrypoint-initdb.d/03_data.sql
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"

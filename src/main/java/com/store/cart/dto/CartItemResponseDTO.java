@@ -1,0 +1,18 @@
+package com.store.cart.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import java.math.BigDecimal;
+
+@Data
+@Builder
+@AllArgsConstructor
+public class CartItemResponseDTO {
+    private Long id;
+    private Long productId;
+    private String productName;
+    private Integer quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal subtotal;
+}
