@@ -1,5 +1,3 @@
-# Store API – Admin Core MVP 🚀
-
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
@@ -34,17 +32,18 @@ El sistema soporta:
 
 ## ⚡ Alcance: MVP vs Versión Enterprise
 
-| Módulo / Feature    | 🟢 MVP (Código en este Repo) | 🔒 Versión Enterprise (Privada / Demo)    |
-| ------------------- | ---------------------------- | ----------------------------------------- |
-| **Modelo de Venta** | Guest Checkout               | Checkout con usuario registrado           |
+| Módulo / Feature    | 🟢 MVP (Código en este Repo) | 🔒 Versión Enterprise (Privada / Demo)   |
+| ------------------- | ---------------------------- | ---------------------------------------- |
+| **Modelo de Venta** | Guest Checkout               | Checkout con usuario registrado          |
 | **Autenticación**   | JWT (Admins)                 | JWT + Refresh Token (rotación automática) |
-| **Roles**           | ADMIN                        | ADMIN + USER                              |
-| **Catálogo**        | ABM básico (Admin)           | Inventario avanzado, variantes, precios   |
-| **Usuarios**        | Solo Admins                  | Usuarios finales + direcciones            |
-| **Pagos**           | ❌ Fuera de alcance           | Integración real con Mercado Pago         |
-| **Notificaciones**  | ❌ Fuera de alcance           | Emails transaccionales HTML async         |
+| **Roles**           | ADMIN                        | ADMIN + USER                             |
+| **Catálogo**        | ABM básico (Admin)           | Inventario avanzado, variantes, precios  |
+| **Usuarios**        | Solo Admins                  | Usuarios finales + direcciones           |
+| **Pagos**           | ❌ Fuera de alcance           | Integración real con Mercado Pago        |
+| **Notificaciones**  | ❌ Fuera de alcance           | Emails transaccionales (Async)        |
 | **Auditoría**       | Timestamps básicos           | Historial completo (SQL Window Functions) |
-| **Frontend**        | ❌ No incluido                | SPA React/Vue integrada                   |
+| **Imágenes de Producto** | Imagen única embebida en Product | Múltiples imágenes normalizadas (ProductImage 1-N)|
+| **Frontend**        | ❌ No incluido                | SPA React/Vue integrada                  |
 
 ---
 
@@ -52,30 +51,31 @@ El sistema soporta:
 
 * **Lenguaje:** Java 21
 * **Framework:** Spring Boot 4
-* **Base de Datos:** PostgreSQL 15
+* **Base de Datos:** PostgreSQL
+* **Transacciones:** Programmatic Transaction Management (TransactionTemplate)
 * **Seguridad:** Spring Security 6 + JWT
 * **Infraestructura:** Docker & Docker Compose
 * **Documentación:** Swagger / OpenAPI
+* **Spring Events:** ApplicationEventPublisher & @EventListener
+* **Pagos:** Mercado Pago SDK (Preferencias y Webhooks)
+* **Email:** Spring Boot Starter Mail (Manejo de plantillas)
 
 ---
 
-## 🔐 Seguridad y Accesos
+### 🔐 Seguridad y Accesos
 
 ### 🔓 Zona Pública (Guest)
 
 Endpoints abiertos:
-
 * `GET /products`
 * `GET /categories`
 * `POST /orders` (checkout invitado)
 
 ### 🔒 Zona Privada (Backoffice)
-
 * Requiere **JWT Bearer Token**
 * Acceso exclusivo para rol `ADMIN`
 
 Funcionalidades:
-
 * Dashboard y métricas del sistema
 * ABM completo de productos, categorías y subcategorías
 * Gestión de órdenes y auditoría
@@ -95,6 +95,31 @@ Este MVP implementa soluciones técnicas que escalan directamente hacia una vers
 
 ---
 
+## 🏗️ Ingeniería de Software y Decisiones de Arquitectura
+
+El desarrollo de **Store API** va más allá del CRUD básico, enfocándose en consistencia, resiliencia y uso eficiente de recursos, aplicando patrones avanzados de Spring Framework.
+
+### 1. Control Granular de Transacciones (Transaction Boundary)
+A diferencia del uso estándar de `@Transactional`, utilicé un manejo programático mediante `TransactionTemplate`.
+* **El Problema:** Mantener una transacción abierta mientras se consulta una API externa (Mercado Pago) bloquea una conexión del pool de la DB (**Connection Holding**).
+* **La Solución:** La persistencia de la orden ocurre en una transacción atómica, pero la latencia de red de la pasarela de pagos se ejecuta **fuera** del contexto transaccional, optimizando el rendimiento bajo alta concurrencia.
+
+### 2. Arquitectura Orientada a Eventos (EDA) con Spring Events
+Utilicé el ecosistema de **Spring Events** para desacoplar el flujo principal de venta de los efectos secundarios (*side-effects*):
+* **Desacoplamiento:** La creación de la orden emite un `OrderCreatedEvent`. Los listeners (Email, Carrito) reaccionan de forma asíncrona.
+* **Consistencia Eventual:** Uso de `@TransactionalEventListener(phase = AFTER_COMMIT)` para asegurar que el email se envíe solo si la base de datos confirmó el pago exitosamente.
+
+
+
+### 3. Idempotencia y Resiliencia en Pagos
+El procesamiento de Webhooks incluye lógica de **idempotencia**. El sistema verifica el estado de la orden antes de procesar notificaciones, evitando errores críticos como el doble descuento de stock o envíos duplicados ante reintentos de la API.
+
+### 4. Estrategia de Stock Optimista y Mantenimiento
+* **Validación en dos pasos:** El stock se valida visualmente al inicio, pero el descuento físico ocurre únicamente tras la confirmación del pago (`PAID`).
+* **Recuperación Automática:** Tareas programadas con `@Scheduled` detectan órdenes en `PENDING` por más de 24 horas y las cancelan automáticamente, liberando el inventario sin intervención humana.
+
+
+---
 ## 🚀 Instalación y Ejecución Local
 
 ### Prerrequisitos

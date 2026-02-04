@@ -1,6 +1,7 @@
 package com.store.product.entity;
 
 import com.store.category.entity.SubcategoryEntity;
+import com.store.exception.BusinessException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -28,4 +29,11 @@ public class ProductEntity {
     @ManyToOne
     @JoinColumn(name = "subcategory_id")
     private SubcategoryEntity subcategory;
+
+    public void decreaseStock(int quantity) {
+        if (this.stock < quantity) {
+            throw new BusinessException("Stock insuficiente para el producto: " + this.name);
+        }
+        this.stock -= quantity;
+    }
 }

@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class CartServiceImp implements CartService{
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
@@ -32,6 +32,7 @@ public class CartServiceImp implements CartService{
      * @return DTO del carrito
      */
     @Override
+    @Transactional
     public CartResponseDTO getCart(String sessionId) {
         CartEntity cart = getOrCreateCart(sessionId);
         return cartMapper.entityToDto(cart);
@@ -55,6 +56,7 @@ public class CartServiceImp implements CartService{
      * @throws ResourceNotFoundException si el producto no existe
      */
     @Override
+    @Transactional
     public CartResponseDTO addToCart(String sessionId, Long productId, Integer quantity) {
         if (quantity <= 0) throw new BusinessException("La cantidad debe ser mayor a 0");
         ProductEntity product = productRepository.findById(productId)
@@ -105,6 +107,7 @@ public class CartServiceImp implements CartService{
      * @throws ResourceNotFoundException si el producto no está presente en el carrito
      */
     @Override
+    @Transactional
     public CartResponseDTO removeItemFromCart(String sessionId, Long productId) {
         CartEntity cart = getOrCreateCart(sessionId);
 

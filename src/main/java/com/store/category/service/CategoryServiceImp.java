@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryServiceImp implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
@@ -92,7 +93,6 @@ public class CategoryServiceImp implements CategoryService {
      * @return lista de categorías
      */
     @Override
-    @Transactional(readOnly = true)
     public List<CategoryResponseDTO> listCategories() {
         return categoryRepository.findAll().stream()
                 .map(categoryMapper::toCategoryResponse)
@@ -105,7 +105,6 @@ public class CategoryServiceImp implements CategoryService {
      * @return lista de categorías con subcategorías
      */
     @Override
-    @Transactional(readOnly = true)
     public List<CategoryResponseDTO> listCategoriesWithSubcategories() {
         return categoryRepository.findAllWithSubcategories().stream()
                 .map(categoryMapper::toCategoryResponse)
@@ -113,7 +112,6 @@ public class CategoryServiceImp implements CategoryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public CategoryResponseDTO listCategoryById(Long id) {
         return categoryRepository.findById(id)
                 .map(categoryMapper::toCategoryResponse)

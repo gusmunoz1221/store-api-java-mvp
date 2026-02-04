@@ -15,4 +15,6 @@ public interface CartRepository extends JpaRepository<CartEntity,Long> {
      * -borra los carritos cuya fecha de actualización sea ANTERIOR a la fecha X
     */
      int deleteByUpdatedAtBefore(LocalDateTime cutoffTime);
+
+    void deleteBySessionId(String sessionId);
 }

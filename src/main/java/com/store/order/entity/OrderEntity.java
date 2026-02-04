@@ -23,13 +23,16 @@ public class OrderEntity {
     private String customerEmail;
     private String customerPhone;
 
+    @Column(nullable = false)
+    private String orderNumber;
+    @Column(nullable = false)
+    private String sessionId;
+
     // dirección de envío
     private String shippingAddress;
     private String shippingCity;
     private String shippingZip;
     private BigDecimal totalAmount;
-    @Column(nullable = false)
-    private Long cartId;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -1,7 +1,7 @@
 package com.store.order.controller;
 
 import com.store.order.dto.OrderRequestDTO;
-import com.store.order.dto.OrderResponseDTO;
+import com.store.order.dto.OrderAdminResponseDTO;
 import com.store.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.store.order.dto.OrderPublicResponseDTO;
 
 @RestController
 @RequestMapping("/orders")
@@ -29,7 +30,7 @@ public class OrderCustomerController {
             @ApiResponse(responseCode = "400", description = "Datos inválidos para la orden")
     })
     @PostMapping
-    public ResponseEntity<OrderResponseDTO> create(@Valid @RequestBody OrderRequestDTO request) {
+    public ResponseEntity<OrderPublicResponseDTO> create(@Valid @RequestBody OrderRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
     }
 
@@ -41,7 +42,7 @@ public class OrderCustomerController {
             @ApiResponse(responseCode = "404", description = "Orden no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponseDTO> getMyOrder(
+    public ResponseEntity<OrderAdminResponseDTO> getMyOrder(
             @Parameter(description = "ID de la orden", example = "123")
             @PathVariable Long id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
