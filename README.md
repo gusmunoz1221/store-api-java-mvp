@@ -109,6 +109,27 @@ Utilicé el ecosistema de **Spring Events** para desacoplar el flujo principal d
 * **Desacoplamiento:** La creación de la orden emite un `OrderCreatedEvent`. Los listeners (Email, Carrito) reaccionan de forma asíncrona.
 * **Consistencia Eventual:** Uso de `@TransactionalEventListener(phase = AFTER_COMMIT)` para asegurar que el email se envíe solo si la base de datos confirmó el pago exitosamente.
 
+  sequenceDiagram
+  participant User as Cliente (Guest)
+  participant API as Store API
+  participant DB as PostgreSQL
+  participant Event as Spring EventBus
+  participant MP as Mercado Pago
+
+  Note over API, DB: Transacción Principal (ACID)
+  User->>API: POST /orders (Checkout)
+  API->>DB: Save Order (PENDING)
+  API->>DB: Reserve Stock
+  API->>Event: Publish OrderCreatedEvent
+  API-->>User: Return 201 Created + PreferenceID
+
+  Note over Event, MP: Procesamiento Asíncrono (Desacoplado)
+  loop Async Listeners
+  Event->>MP: Crear Preferencia de Pago
+  Event->>DB: Log Audit Trail
+  Event->>User: Enviar Email (Confirmación Pendiente)
+  end
+
 
 
 ### 3. Idempotencia y Resiliencia en Pagos
@@ -181,17 +202,37 @@ Usa estas credenciales para obtener el **JWT** en `/auth/login`:
 
 > ⚠️ Imágenes **solo demostrativas** para ilustrar capacidades avanzadas de la versión Enterprise.
 
+### login Admin
+![login](images/login.png)
+
 ### Dashboard Admin
 
-![Dashboard](images/dashboard.png)
+![Dashboard](images/dashboard/dashboard.png)
 
-### Flujo de Checkout con Usuario Registrado
+### Flujo de Checkout MP
 
-![Checkout Flow](images/checkout-flow.png)
+![Checkout MP](images/mercadoPago/mp.png)
+![Checkout MP](images/mercadoPago/mp1.png)
+
 
 ### Email Notificación Transaccional
 
-![Email Notification](images/email-notification.png)
+![Email Notification](images/email-notification.jpg)
+
+## 📸 Galería del Backoffice
+
+| Dashboard Operativo | Gestión de Órdenes (State Machine) |
+|:-------------------:|:----------------------------------:|
+| ![Dashboard](./images/dashboard/dashboard1.1.png) <br> *Métricas en tiempo real y alertas de stock.* | ![Detalle Orden](./images/pedidos/pedidos1.1.png) <br> *Trazabilidad del ciclo de vida de la venta.* |
+
+| Jerarquía de Datos | Auditoría (Soft Delete) |
+|:------------------:|:-----------------------:|
+| ![Categorías](./images/categorias/categorias1.2.png) <br> *Gestión de categorías anidadas.* | ![Papelera](./images/productos/productos1.1.png) <br> *Manejo de borrado lógico y restauración.* |
+
+
+| Motor de Reportes y Métricas | Exportación y Documentos |
+|:----------------------------:|:------------------------:|
+| ![Panel de Reportes](./images/reportes/reportes.png) <br> *Agregación de datos en tiempo real y filtros por rango de fechas.* | ![Vista de Impresión](./images/reportes/reportes1.2.png) <br> *Generación de documentos imprimibles y exportación a PDF.* |
 
 ---
 
