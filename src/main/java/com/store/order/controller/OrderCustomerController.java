@@ -1,10 +1,11 @@
 package com.store.order.controller;
 
 import com.store.order.dto.OrderRequestDTO;
-import com.store.order.dto.OrderAdminResponseDTO;
+import com.store.order.dto.TrackOrderRequestDTO;
 import com.store.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,33 +19,51 @@ import com.store.order.dto.OrderPublicResponseDTO;
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
-@Tag(name = "Orders", description = "Operaciones de ordenes para clientes")
+@Tag(name = "Orders (Cliente)", description = "Endpoints públicos para compra y seguimiento de pedidos")
 public class OrderCustomerController {
+
     private final OrderService orderService;
 
-
     // CREAR ORDEN
-    @Operation(summary = "Crear orden", description = "Crea una nueva orden para el cliente")
+    @Operation(
+            summary = "Crear nueva orden",
+            description = "Finaliza la compra creando una orden basada en el carrito actual. Retorna el Tracking ID y el Número de Orden."
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Orden creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos para la orden")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Orden creada exitosamente",
+                    content = @Content(schema = @Schema(implementation = OrderPublicResponseDTO.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Datos de envío invalidos, carrito vacio o stock insuficiente")
     })
     @PostMapping
     public ResponseEntity<OrderPublicResponseDTO> create(@Valid @RequestBody OrderRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
     }
 
-
-    // OBTENER ORDEN POR ID
-    @Operation(summary = "Obtener orden por ID", description = "Devuelve los detalles de una orden específica")
+    // TRACKING
+    @Operation(
+            summary = "Rastrear orden manualmente",
+            description = "Busca una orden validando que coincidan el Numero de Orden y el Email del comprador. Usado en formularios de 'Seguir mi envío'."
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Orden obtenida correctamente"),
-            @ApiResponse(responseCode = "404", description = "Orden no encontrada")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Orden validada y encontrada",
+                    content = @Content(schema = @Schema(implementation = OrderPublicResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Formato de email o numero de orden invalido"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No se encontró ninguna orden que coincida con ese numero Y ese email"
+            )
     })
-    @GetMapping("/{id}")
-    public ResponseEntity<OrderAdminResponseDTO> getMyOrder(
-            @Parameter(description = "ID de la orden", example = "123")
-            @PathVariable Long id) {
-        return ResponseEntity.ok(orderService.getOrderById(id));
+    @PostMapping("/track")
+    public ResponseEntity<OrderPublicResponseDTO> trackManual(@Valid @RequestBody TrackOrderRequestDTO request) {
+        return ResponseEntity.ok(orderService.trackOrder(request.getOrderNumber(), request.getEmail()));
     }
 }

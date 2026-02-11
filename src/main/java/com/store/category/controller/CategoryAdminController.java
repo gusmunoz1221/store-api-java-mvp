@@ -3,8 +3,11 @@ package com.store.category.controller;
 import com.store.category.dto.CategoryPatchRequestDTO;
 import com.store.category.dto.CategoryRequestDTO;
 import com.store.category.dto.CategoryResponseDTO;
+import com.store.category.service.CategoryService;
 import com.store.category.service.CategoryServiceImp;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,40 +21,46 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/categories")
 @RequiredArgsConstructor
 @Tag(name = "ADMIN - Categorías",
-        description = "Endpoints de administración para crear, actualizar y eliminar categorías")
+        description = "Endpoints protegidos para gestión de catálogo")
 public class CategoryAdminController {
-    private final CategoryServiceImp categoryService;
+
+    // CORRECCION: Inyectamos la Interfaz, no la implementación concreta
+    private final CategoryService categoryService;
 
     @Operation(summary = "Crear categoría",
-            description = "Crea una nueva categoría. Endpoint exclusivo para administradores.")
+            description = "Registra una nueva categoría en el sistema.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Categoría creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "409", description = "La categoría ya existe")})
+            @ApiResponse(responseCode = "201", description = "Categoría creada",
+                    content = @Content(schema = @Schema(implementation = CategoryResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Error de validación (ej. nombre duplicado o formato inválido)"),
+            @ApiResponse(responseCode = "409", description = "Conflicto: La categoría ya existe")
+    })
     @PostMapping
     public ResponseEntity<CategoryResponseDTO> create(@Valid @RequestBody CategoryRequestDTO request){
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.createCategory(request));
     }
 
-    @Operation(summary = "Actualizar categoría",
-            description = "Actualiza parcialmente una categoría existente. Endpoint exclusivo para administradores.")
+    @Operation(summary = "Actualizar categoría parcialmente",
+            description = "Actualiza nombre o descripción. Solo envía los campos que quieras modificar.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Categoría actualizada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada"),
-            @ApiResponse(responseCode = "409", description = "Ya existe una categoría con ese nombre")})
+            @ApiResponse(responseCode = "200", description = "Actualización exitosa",
+                    content = @Content(schema = @Schema(implementation = CategoryResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos (longitud incorrecta)"),
+            @ApiResponse(responseCode = "404", description = "ID de categoría no encontrado")
+    })
     @PatchMapping("/{id}")
-    public ResponseEntity<CategoryResponseDTO> update(@PathVariable Long id,
-                                                      @RequestBody CategoryPatchRequestDTO request){
-        return ResponseEntity.ok(categoryService.updateCategory(id,request));
+    public ResponseEntity<CategoryResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CategoryPatchRequestDTO request){
+        return ResponseEntity.ok(categoryService.updateCategory(id, request));
     }
 
     @Operation(summary = "Eliminar categoría",
-            description = "Elimina una categoría si no tiene subcategorías asociadas ni productos. Endpoint exclusivo para administradores.")
+            description = "Elimina una categoría lógica o físicamente. Falla si tiene productos asociados.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Categoría eliminada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada"),
-            @ApiResponse(responseCode = "409", description = "La categoría tiene subcategorías asociadas o productos")})
+            @ApiResponse(responseCode = "204", description = "Eliminacion exitosa (Sin contenido)"),
+            @ApiResponse(responseCode = "409", description = "No se puede eliminar: tiene dependencias (productos/subcategorias)")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);

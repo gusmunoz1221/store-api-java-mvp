@@ -15,7 +15,7 @@ public class OrderAdminResponseDTO {
     Long id;
     String customerName;
     String customerEmail;
-    String customerPhone;    // PII (Sensitive)
+    String customerPhone;
     String shippingAddress;
     String shippingCity;
     BigDecimal totalAmount;

@@ -5,6 +5,9 @@ import com.store.category.dto.SubcategoryRequestDTO;
 import com.store.category.dto.SubcategorySimpleDTO;
 import com.store.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,49 +21,63 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/subcategories")
 @RequiredArgsConstructor
 @Tag(name = "ADMIN - Subcategorías",
-        description = "Endpoints administrativos para crear, actualizar y eliminar subcategorías")
+        description = "Gestion de subcategorías (Creación dependiente de categorías padre)")
 public class SubCategoryAdminController {
+
     private final CategoryService categoryService;
 
-    @Operation(summary = "Crear subcategoría",
-            description = "Crea una nueva subcategoría asociada a una categoría existente. " +
-                    "Endpoint exclusivo para administradores.")
+    // CREAR SUBCATEGORIA
+    @Operation(summary = "Crear subcategoria",
+            description = "Crea una subcategoria y la vincula inmediatamente a una Categoria Padre existente.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Subcategoría creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "404", description = "Categoría no encontrada"),
-            @ApiResponse(responseCode = "409", description = "La subcategoría ya existe")})
+            @ApiResponse(responseCode = "201", description = "Subcategoría creada exitosamente",
+                    content = @Content(schema = @Schema(implementation = SubcategorySimpleDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos (nombre vacío o muy corto)"),
+            @ApiResponse(responseCode = "404", description = "La Categoría Padre especificada no existe"),
+            @ApiResponse(responseCode = "409", description = "Ya existe una subcategoría con ese nombre en esta categoría")
+    })
     @PostMapping("/{categoryId}")
-    public ResponseEntity<SubcategorySimpleDTO> create(@PathVariable Long categoryId,
-                                                        @Valid @RequestBody SubcategoryRequestDTO request){
+    public ResponseEntity<SubcategorySimpleDTO> create(
+            @Parameter(description = "ID de la Categoría Padre a la que pertenecera", example = "10", required = true)
+            @PathVariable Long categoryId,
+            @Valid @RequestBody SubcategoryRequestDTO request) {
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(categoryService.createSubcategory(categoryId,request));
+                .body(categoryService.createSubcategory(categoryId, request));
     }
 
-    @Operation(summary = "Actualizar subcategoría",
-            description = "Actualiza parcialmente una subcategoría existente. " + "Endpoint exclusivo para administradores.")
+    // ACTUALIZAR SUBCATEGORIA
+    @Operation(summary = "Actualizar subcategoría parcialmente",
+            description = "Permite modificar nombre o descripcion sin enviar todo el objeto.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Subcategoría actualizada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "404", description = "Subcategoría no encontrada"),
-            @ApiResponse(responseCode = "409", description = "La subcategoría ya existe")})
-    @PutMapping("/{id}")
-    public ResponseEntity<SubcategorySimpleDTO> update(@PathVariable Long id,
-                                                       @RequestBody SubcategoryPatchRequestDTO request){
-        return ResponseEntity.ok(categoryService.updateSubcategory(id,request));
+            @ApiResponse(responseCode = "200", description = "Actualizacion correcta",
+                    content = @Content(schema = @Schema(implementation = SubcategorySimpleDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos invalidos (longitud incorrecta)"),
+            @ApiResponse(responseCode = "404", description = "ID de subcategoría no encontrado")
+    })
+    @PatchMapping("/{id}") //
+    public ResponseEntity<SubcategorySimpleDTO> update(
+            @Parameter(description = "ID de la subcategoría a editar", example = "55")
+            @PathVariable Long id,
+            @Valid @RequestBody SubcategoryPatchRequestDTO request) {
+
+        return ResponseEntity.ok(categoryService.updateSubcategory(id, request));
     }
 
-    @Operation(summary = "Eliminar subcategoría",
-            description = "Elimina una subcategoría si no tiene productos asociados. " + "Endpoint exclusivo para administradores.")
+    // ELIMINAR SUBCATEGORIA
+    @Operation(summary = "Eliminar subcategoria",
+            description = "Elimina el registro de la subcategoria. Requiere que no tenga productos activos.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Subcategoría eliminada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Subcategoría no encontrada"),
-            @ApiResponse(responseCode = "409", description = "La subcategoría tiene productos asociados")})
+            @ApiResponse(responseCode = "204", description = "Eliminacion exitosa"),
+            @ApiResponse(responseCode = "409", description = "No se puede eliminar: tiene productos asociados")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id){
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "ID de la subcategoría a eliminar", example = "55")
+            @PathVariable Long id) {
+
         categoryService.deleteSubcategory(id);
         return ResponseEntity.noContent().build();
     }
-
 }

@@ -15,6 +15,7 @@ COPY src ./src
 
 # Compilamos el jar dentro del contenedor, saltando los tests
 RUN ./mvnw clean package -DskipTests
+RUN cp target/*.jar target/app.jar
 
 # Exponemos el puerto que usa Spring Boot
 EXPOSE 8080

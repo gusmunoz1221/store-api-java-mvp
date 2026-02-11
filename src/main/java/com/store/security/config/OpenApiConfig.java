@@ -15,9 +15,9 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("StoreMates API")
+                        .title("Store API")
                         .version("1.0.0")
-                        .description("Documentación oficial del E-commerce StoreMates."))
+                        .description("Documentación oficial del E-commerce Store."))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",

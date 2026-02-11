@@ -5,9 +5,11 @@ import com.store.order.dto.OrderPublicResponseDTO;
 import com.store.order.dto.OrderRequestDTO;
 import com.store.order.dto.OrderAdminResponseDTO;
 import com.store.order.entity.OrderStatus;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface OrderService {
     // Crea una nueva orden
@@ -24,9 +26,13 @@ public interface OrderService {
     // Filtra órdenes por estado (Ej: ver solo las "PENDING")
     Page<OrderAdminResponseDTO> filterOrdersByStatus(OrderStatus status, Pageable pageable);
 
-    // Busca órdenes por rango de fechas (Reportes)
-    Page<OrderAdminResponseDTO> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
-
     // ACTUALIZA ESTADO
     OrderAdminResponseDTO updateOrderStatus(Long id, OrderStatus newStatus);
+
+    // buscador de orden -> correo + numero de orden
+    OrderPublicResponseDTO trackOrder(String orderNumber, String email);
+
+    @Nullable Page<OrderAdminResponseDTO> getReport(LocalDateTime startDateTime, LocalDateTime endDateTime, List<OrderStatus> filterStatus, Pageable pageable);
+
+    OrderAdminResponseDTO findOrder(String orderNumber);
 }

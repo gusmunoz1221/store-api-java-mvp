@@ -102,6 +102,23 @@ public class OrderServiceImp implements OrderService {
         return orderMapper.entityToPublicDto(savedOrder);
     }
 
+    /**
+     * Para el Formulario "Rastrear mi pedido"
+     * Requiere clave compuesta: numero de orden + email.
+     * Esto evita que alguien adivine el numero de orden y vea datos ajenos.
+     */
+    @Transactional(readOnly = true)
+    public OrderPublicResponseDTO trackOrder(String orderNumber, String email) {
+        return orderRepository.findByOrderNumberAndCustomerEmail(orderNumber, email)
+                .map(orderMapper::entityToPublicDto)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro una orden con ese numero y email asociados."));
+    }
+
+    /**
+     * Busca por el UUID (trackingId)  unico.
+     */
+
+
     private String generateOrderNumber(OrderEntity order) {
         int year = LocalDate.now().getYear();
         return String.format("ORD-%d-%08d", year, order.getId());
@@ -134,12 +151,6 @@ public class OrderServiceImp implements OrderService {
                 .map(orderMapper::entityToAdminDto);
     }
 
-    @Override
-    public Page<OrderAdminResponseDTO> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable) {
-        return orderRepository
-                .findByCreatedAtBetween(start, end, pageable)
-                .map(orderMapper::entityToAdminDto);
-    }
 
     @Transactional
     @Override
@@ -150,5 +161,27 @@ public class OrderServiceImp implements OrderService {
         order.setStatus(newStatus);
 
         return orderMapper.entityToAdminDto(orderRepository.save(order));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderAdminResponseDTO> getReport(LocalDateTime start,
+                                                 LocalDateTime end,
+                                                 List<OrderStatus> statuses,
+                                                 Pageable pageable) {
+        List<OrderStatus> filterStatuses = (statuses != null && !statuses.isEmpty())
+                ? statuses
+                : null;
+
+        Page<OrderEntity> orderPage = orderRepository.findByReportFilters(start, end, filterStatuses, pageable);
+
+        return orderPage.map(orderMapper::entityToAdminDto);
+    }
+
+    @Override
+    public OrderAdminResponseDTO findOrder(String orderNumber) {
+        return orderRepository.findSmart(orderNumber)
+                .map(orderMapper::entityToAdminDto)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada con: " + orderNumber));
     }
 }
